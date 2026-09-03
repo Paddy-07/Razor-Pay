@@ -23,7 +23,7 @@ SYNTHETIC_FILE = (
     BASE_DIR
     / "data"
     / "processed"
-    / "synthetic_fraud_sequences_v2.csv"
+    / "synthetic_fraud_sequences_v3.csv"
 )
 
 
