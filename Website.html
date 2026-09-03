@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Risk Manager — Razorpay Buildathon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0d0c0a;
+    --panel: #151310;
+    --panel-2: #1b1814;
+    --line: rgba(237,231,217,0.10);
+    --text: #ede7d9;
+    --text-dim: #8c8779;
+    --gold: #c99a46;
+    --gold-dim: rgba(201,154,70,0.14);
+    --green: #7fae6a;
+    --amber: #d1a04a;
+    --red: #c5695a;
+    --display: 'Jost', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--body);}
+  body{min-height:100vh;}
+  a{color:inherit;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------------- Sidebar ---------------- */
+  .sidebar{
+    width:300px;flex-shrink:0;
+    padding:48px 32px;
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;
+  }
+  .brand{margin-bottom:56px;}
+  .brand-mark{
+    font-family:var(--display);font-weight:500;font-size:15px;
+    letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);
+  }
+  .brand-sub{margin-top:8px;font-size:13px;color:var(--text-dim);line-height:1.5;max-width:220px;}
+
+  nav{display:flex;flex-direction:column;}
+  .nav-item{
+    display:flex;gap:16px;align-items:baseline;
+    padding:16px 0;border-top:1px solid var(--line);
+    cursor:pointer;background:none;border-left:none;border-right:none;border-bottom:none;
+    text-align:left;color:var(--text-dim);
+    transition:color .15s ease;
+  }
+  .nav-item:last-child{border-bottom:1px solid var(--line);}
+  .nav-item .n{font-family:var(--display);font-size:12px;color:var(--text-dim);width:20px;flex-shrink:0;}
+  .nav-item .t{font-family:var(--display);font-size:16px;font-weight:500;letter-spacing:0.01em;}
+  .nav-item.active{color:var(--text);}
+  .nav-item.active .n{color:var(--gold);}
+  .nav-item:hover{color:var(--text);}
+
+  .sidebar-foot{margin-top:auto;padding-top:32px;font-size:12px;color:var(--text-dim);line-height:1.6;}
+  .sidebar-foot a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-dim);}
+
+  /* ---------------- Main panel ---------------- */
+  main{flex:1;padding:64px 72px;max-width:920px;}
+  .view{display:none;}
+  .view.active{display:block;animation:rise .5s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){.view.active{animation:none;}}
+
+  .eyebrow{
+    font-family:var(--display);font-size:12px;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:18px;
+  }
+  h1{
+    font-family:var(--display);font-weight:500;font-size:44px;line-height:1.15;
+    max-width:16ch;margin-bottom:20px;
+  }
+  h2{font-family:var(--display);font-weight:500;font-size:26px;margin-bottom:16px;}
+  .lede{font-size:17px;color:var(--text-dim);max-width:62ch;line-height:1.65;margin-bottom:40px;}
+  p{font-size:15px;line-height:1.7;color:var(--text-dim);max-width:70ch;}
+  p + p{margin-top:14px;}
+
+  hr.rule{border:none;border-top:1px solid var(--line);margin:40px 0;}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:8px;}
+  .twocol h3{
+    font-family:var(--display);font-size:12px;letter-spacing:0.12em;text-transform:uppercase;
+    color:var(--text);margin-bottom:12px;
+  }
+  .twocol p{max-width:none;}
+
+  /* ---------------- Architecture ---------------- */
+  .stage-list{display:flex;flex-direction:column;margin-top:32px;}
+  .stage{
+    border-top:1px solid var(--line);padding:24px 0;display:grid;
+    grid-template-columns:36px 1fr 2fr;gap:24px;align-items:start;
+  }
+  .stage:last-child{border-bottom:1px solid var(--line);}
+  .stage .idx{font-family:var(--display);color:var(--gold);font-size:14px;padding-top:2px;}
+  .stage .name{font-family:var(--display);font-weight:500;font-size:17px;}
+  .stage .desc{font-size:14px;color:var(--text-dim);line-height:1.6;}
+  .tag{
+    display:inline-block;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--gold);border:1px solid var(--gold-dim);background:var(--gold-dim);
+    padding:3px 8px;border-radius:3px;margin-top:8px;
+  }
+
+  /* ---------------- Live demo ---------------- */
+  .demo-box{
+    border:1px solid var(--line);background:var(--panel);border-radius:6px;
+    padding:36px;margin-top:32px;
+  }
+  .demo-note{font-size:12px;color:var(--text-dim);margin-bottom:28px;border-left:2px solid var(--gold-dim);padding-left:12px;}
+  .sliders{display:grid;grid-template-columns:1fr 1fr;gap:24px 40px;margin-bottom:32px;}
+  .slider-group label{
+    display:flex;justify-content:space-between;font-size:13px;color:var(--text-dim);margin-bottom:8px;
+  }
+  .slider-group label span.val{color:var(--text);font-family:var(--display);}
+  input[type=range]{
+    width:100%;-webkit-appearance:none;height:2px;background:var(--line);outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--gold);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;}
+  .toggle-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-dim);}
+  .toggle-row input{accent-color:var(--gold);}
+
+  .result-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;border-top:1px solid var(--line);padding-top:28px;}
+  .state-bars{display:flex;flex-direction:column;gap:14px;}
+  .state-bar-row{display:grid;grid-template-columns:110px 1fr 40px;align-items:center;gap:10px;font-size:12px;color:var(--text-dim);}
+  .state-track{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;}
+  .state-fill{height:100%;border-radius:3px;transition:width .3s ease;}
+  .fill-normal{background:var(--green);}
+  .fill-probing{background:var(--amber);}
+  .fill-abuse{background:var(--red);}
+
+  .score-block{text-align:left;}
+  .score-num{font-family:var(--display);font-size:52px;font-weight:500;line-height:1;}
+  .score-label{font-size:12px;color:var(--text-dim);margin-top:4px;letter-spacing:0.06em;text-transform:uppercase;}
+  .decision{
+    display:inline-block;margin-top:16px;padding:6px 14px;border-radius:3px;
+    font-family:var(--display);font-size:13px;letter-spacing:0.06em;text-transform:uppercase;
+  }
+  .decision.allow{background:rgba(127,174,106,0.15);color:var(--green);}
+  .decision.review{background:rgba(209,160,74,0.15);color:var(--amber);}
+  .decision.block{background:rgba(197,105,90,0.15);color:var(--red);}
+
+  .explain-list{margin-top:18px;list-style:none;font-size:13px;color:var(--text-dim);}
+  .explain-list li{padding:6px 0;border-top:1px solid var(--line);}
+  .explain-list li:before{content:"—  ";color:var(--gold);}
+
+  /* ---------------- Results ---------------- */
+  .bar-rows{display:flex;flex-direction:column;gap:18px;margin-top:8px;max-width:640px;}
+  .bar-row{display:grid;grid-template-columns:170px 1fr 50px;align-items:center;gap:14px;font-size:13px;color:var(--text-dim);}
+  .bar-track{height:10px;background:var(--panel-2);border-radius:2px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--gold);border-radius:2px;}
+
+  .dataset-stats{display:flex;gap:40px;margin:28px 0 36px;flex-wrap:wrap;}
+  .dstat-num{font-family:var(--display);font-size:26px;color:var(--text);}
+  .dstat-label{font-size:11px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;margin-top:4px;}
+
+  .metrics-table{width:100%;max-width:720px;border-collapse:collapse;margin-top:36px;font-size:13px;}
+  .metrics-table th{
+    text-align:left;font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--text-dim);padding:0 14px 10px 0;border-bottom:1px solid var(--line);
+  }
+  .metrics-table td{padding:12px 14px 12px 0;border-bottom:1px solid var(--line);color:var(--text-dim);}
+  .metrics-table td:first-child{color:var(--text);font-family:var(--display);}
+  .metrics-table td.num{font-variant-numeric:tabular-nums;}
+  .metrics-table tr:last-child td{border-bottom:none;}
+
+  /* ---------------- Repo/contact ---------------- */
+  .link-card{
+    display:block;border:1px solid var(--line);border-radius:6px;padding:20px 24px;
+    margin-top:16px;text-decoration:none;transition:border-color .15s ease;
+  }
+  .link-card:hover{border-color:var(--gold-dim);}
+  .link-card .lc-title{font-family:var(--display);font-size:16px;color:var(--text);}
+  .link-card .lc-sub{font-size:13px;color:var(--text-dim);margin-top:4px;}
+
+  @media (max-width: 860px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--line);}
+    main{padding:40px 24px;}
+    .twocol,.result-grid,.sliders{grid-template-columns:1fr;}
+    h1{font-size:32px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">AI Risk Manager</div>
+      <div class="brand-sub">Behavioral fraud detection built for the Razorpay AI Buildathon — Track 02.</div>
+    </div>
+
+    <nav>
+      <button class="nav-item active" data-target="sec-01"><span class="n">01</span><span class="t">Overview</span></button>
+      <button class="nav-item" data-target="sec-02"><span class="n">02</span><span class="t">How it thinks</span></button>
+      <button class="nav-item" data-target="sec-03"><span class="n">03</span><span class="t">Try it live</span></button>
+      <button class="nav-item" data-target="sec-04"><span class="n">04</span><span class="t">Results</span></button>
+      <button class="nav-item" data-target="sec-05"><span class="n">05</span><span class="t">The repo</span></button>
+    </nav>
+
+    <div class="sidebar-foot">
+      Built by Padmesh · Amrita School of AI<br>
+      <a href="https://github.com/Paddy-07/Razor-Pay" target="_blank">View source on GitHub →</a>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- 01 OVERVIEW -->
+    <section id="sec-01" class="view active">
+      <div class="eyebrow">Track 02 — AI Risk Manager</div>
+      <h1>Fraud doesn't happen in one transaction. It happens over a trajectory.</h1>
+      <p class="lede">
+        Most fraud detectors score a single transaction in isolation. This one watches how a
+        customer's behavior drifts over time — from normal, to probing, to active abuse — and
+        turns that trajectory into a risk score a merchant can actually audit, not just trust.
+      </p>
+
+      <hr class="rule">
+
+      <div class="twocol">
+        <div>
+          <h3>Why this approach</h3>
+          <p>
+            A single-row classifier can't see a customer escalating. A hidden Markov model
+            can — it tracks hidden behavioral state across an entity's transaction sequence
+            and never sees the fraud label while training, so its states stay honestly
+            unsupervised.
+          </p>
+        </div>
+        <div>
+          <h3>The bar we hold ourselves to</h3>
+          <p>
+            Honest precision, recall, and false-positive cost on a held-out test set —
+            measured against a rule-based baseline and logistic regression, not just against
+            ourselves. Strictly defense-only: every synthetic-fraud component exists to
+            stress-test the detector, never to design an attack.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 ARCHITECTURE -->
+    <section id="sec-02" class="view">
+      <div class="eyebrow">System design</div>
+      <h2>Five stages, one decision</h2>
+      <p class="lede">A transaction stream becomes a bounded, explainable decision.</p>
+
+      <div class="stage-list">
+        <div class="stage">
+          <div class="idx">01</div>
+          <div class="name">Behavioral features</div>
+          <div class="desc">
+            6-hour windows per entity: transaction velocity, amount statistics, device and
+            email diversity, night-activity rate, and how much a transaction's amount
+            deviates from the entity's own history.
+          </div>
+        </div>
+        <div class="stage">
+          <div class="idx">02</div>
+          <div class="name">HMM trajectory model</div>
+          <div class="desc">
+            A 3-state Gaussian HMM tags each window <em>NORMAL</em>, <em>PROBING</em>, or
+            <em>ACTIVE_ABUSE</em>, then a trajectory score blends the current state with how
+            the entity got there — a fresh transition into abuse weighs differently than
+            abuse that's been sitting there for a while.
+            <div class="tag">unsupervised</div>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="idx">03</div>
+          <div class="name">Bayesian evidence fusion</div>
+          <div class="desc">
+            Combines the trajectory score with independent behavioral flags — shared
+            devices, multiple emails, rapid transactions — into one calibrated probability,
+            with a plain-English explanation of exactly which evidence fired.
+            <div class="tag">explainable</div>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="idx">04</div>
+          <div class="name">Synthetic stress test</div>
+          <div class="desc">
+            A WGAN-GP generator trained only on real fraud rows produces synthetic fraud
+            sequences, validated against real fraud with an adversarial realism check, to
+            confirm the detector generalizes past the examples it saw in training.
+            <div class="tag">defense-only</div>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="idx">05</div>
+          <div class="name">Decision + audit trail</div>
+          <div class="desc">
+            Every score resolves to allow, review, or block — with the evidence that led
+            there logged alongside it, so a compliance reviewer can trace any decision back
+            to its cause.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 LIVE DEMO -->
+    <section id="sec-03" class="view">
+      <div class="eyebrow">Interactive</div>
+      <h2>Move the signals, watch the decision change</h2>
+      <p class="lede">A simplified, client-side recreation of the fusion logic — move the sliders to see how evidence turns into a decision.</p>
+
+      <div class="demo-box">
+        <div class="demo-note">
+          This runs a lightweight version of the real scoring logic directly in your browser,
+          using the same 0.30 / 0.70 risk thresholds as the actual model, so you can feel the
+          mechanism without a live backend. The full trained HMM + Bayesian pipeline lives in
+          the repo.
+        </div>
+
+        <div class="sliders">
+          <div class="slider-group">
+            <label>Transactions in window <span class="val" id="val-velocity">3</span></label>
+            <input type="range" id="velocity" min="0" max="20" value="3">
+          </div>
+          <div class="slider-group">
+            <label>Unique devices <span class="val" id="val-devices">1</span></label>
+            <input type="range" id="devices" min="1" max="6" value="1">
+          </div>
+          <div class="slider-group">
+            <label>Unique payment emails <span class="val" id="val-emails">1</span></label>
+            <input type="range" id="emails" min="1" max="5" value="1">
+          </div>
+          <div class="slider-group">
+            <label>Night-activity rate <span class="val" id="val-night">10%</span></label>
+            <input type="range" id="night" min="0" max="100" value="10">
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-bottom:32px;">
+          <input type="checkbox" id="rapid"> <label for="rapid">Rapid-fire transactions (under 60s apart)</label>
+        </div>
+
+        <div class="result-grid">
+          <div>
+            <div class="state-bars">
+              <div class="state-bar-row">
+                <span>Normal</span>
+                <div class="state-track"><div class="state-fill fill-normal" id="bar-normal" style="width:70%"></div></div>
+                <span id="pct-normal">70%</span>
+              </div>
+              <div class="state-bar-row">
+                <span>Probing</span>
+                <div class="state-track"><div class="state-fill fill-probing" id="bar-probing" style="width:20%"></div></div>
+                <span id="pct-probing">20%</span>
+              </div>
+              <div class="state-bar-row">
+                <span>Active abuse</span>
+                <div class="state-track"><div class="state-fill fill-abuse" id="bar-abuse" style="width:10%"></div></div>
+                <span id="pct-abuse">10%</span>
+              </div>
+            </div>
+            <ul class="explain-list" id="explain-list">
+              <li>No strong behavioral anomaly</li>
+            </ul>
+          </div>
+          <div class="score-block">
+            <div class="score-num" id="score-num">0.12</div>
+            <div class="score-label">fused risk probability</div>
+            <div class="decision allow" id="decision-badge">Allow</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 RESULTS -->
+    <section id="sec-04" class="view">
+      <div class="eyebrow">Evaluation</div>
+      <h2>Measured against a baseline, not just against itself</h2>
+      <p class="lede">All four approaches scored on the identical held-out entities, using an entity-level train/test split so no entity's transactions leak across the boundary.</p>
+
+      <div class="dataset-stats">
+        <div><div class="dstat-num">282,174</div><div class="dstat-label">Total observations</div></div>
+        <div><div class="dstat-num">14,845</div><div class="dstat-label">Total entities</div></div>
+        <div><div class="dstat-num">11,876</div><div class="dstat-label">Training entities</div></div>
+        <div><div class="dstat-num">2,969</div><div class="dstat-label">Testing entities</div></div>
+        <div><div class="dstat-num">52,902</div><div class="dstat-label">Test observations</div></div>
+      </div>
+
+      <h3 style="font-family:var(--display);font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text);margin-bottom:4px;">F1-score by model</h3>
+      <div class="bar-rows" id="results-bars"></div>
+
+      <table class="metrics-table">
+        <thead>
+          <tr><th>Model</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr>
+        </thead>
+        <tbody id="metrics-body"></tbody>
+      </table>
+    </section>
+
+    <!-- 05 REPO -->
+    <section id="sec-05" class="view">
+      <div class="eyebrow">Source</div>
+      <h2>Everything here is in the open</h2>
+      <p class="lede">Code, README, and the evaluation harness that produced the numbers above.</p>
+
+      <a class="link-card" href="https://github.com/Paddy-07/Razor-Pay" target="_blank">
+        <div class="lc-title">GitHub repository →</div>
+        <div class="lc-sub">https://github.com/Paddy-07/Razor-Pay</div>
+      </a>
+      <a class="link-card" href="#" target="_blank">
+        <div class="lc-title">Demo video →</div>
+        <div class="lc-sub">Link your 60–90 second walkthrough here once recorded.</div>
+      </a>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ---------- Navigation ----------
+  const navItems = document.querySelectorAll('.nav-item');
+  const views = document.querySelectorAll('.view');
+  navItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      navItems.forEach(b => b.classList.remove('active'));
+      views.forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+
+  // ---------- Live demo logic ----------
+  const velocityEl = document.getElementById('velocity');
+  const devicesEl = document.getElementById('devices');
+  const emailsEl = document.getElementById('emails');
+  const nightEl = document.getElementById('night');
+  const rapidEl = document.getElementById('rapid');
+
+  function sigmoid(x){ return 1 / (1 + Math.exp(-x)); }
+
+  function updateDemo(){
+    const velocity = +velocityEl.value;
+    const devices = +devicesEl.value;
+    const emails = +emailsEl.value;
+    const night = +nightEl.value / 100;
+    const rapid = rapidEl.checked;
+
+    document.getElementById('val-velocity').textContent = velocity;
+    document.getElementById('val-devices').textContent = devices;
+    document.getElementById('val-emails').textContent = emails;
+    document.getElementById('val-night').textContent = Math.round(night*100) + '%';
+
+    // Binary evidence flags — same cutoffs as bayesian/risk_model.py
+    const multiDevice = devices >= 3;
+    const multiEmail = emails >= 2;
+
+    // Simplified trajectory intensity (0..1), standing in for the HMM's posterior
+    const velocityNorm = Math.min(velocity / 15, 1);
+    const trajectory = Math.min(
+      0.45*velocityNorm + 0.2*(multiDevice?1:0) + 0.15*(multiEmail?1:0) + 0.15*(rapid?1:0) + 0.05*night,
+      1
+    );
+
+    const stateNormal = Math.max(0, 1 - trajectory*1.3);
+    const stateAbuse = Math.max(0, trajectory*1.3 - 0.3);
+    const stateProbing = Math.max(0, 1 - stateNormal - stateAbuse);
+    const total = stateNormal + stateProbing + stateAbuse || 1;
+
+    const pNormal = stateNormal/total, pProbing = stateProbing/total, pAbuse = stateAbuse/total;
+
+    document.getElementById('bar-normal').style.width = (pNormal*100)+'%';
+    document.getElementById('bar-probing').style.width = (pProbing*100)+'%';
+    document.getElementById('bar-abuse').style.width = (pAbuse*100)+'%';
+    document.getElementById('pct-normal').textContent = Math.round(pNormal*100)+'%';
+    document.getElementById('pct-probing').textContent = Math.round(pProbing*100)+'%';
+    document.getElementById('pct-abuse').textContent = Math.round(pAbuse*100)+'%';
+
+    // Bayesian-style fusion — weighted logit combination, mirrors risk_model.py's evidence weighting
+    const logit = -2.2
+      + 3.2*pAbuse
+      + 1.6*trajectory
+      + (multiDevice ? 1.1 : 0)
+      + (multiEmail ? 0.8 : 0)
+      + (rapid ? 1.3 : 0)
+      + 0.6*night;
+
+    const score = sigmoid(logit);
+    document.getElementById('score-num').textContent = score.toFixed(2);
+
+    const badge = document.getElementById('decision-badge');
+    badge.className = 'decision';
+    if (score >= 0.70){ badge.classList.add('block'); badge.textContent = 'Block'; }
+    else if (score >= 0.30){ badge.classList.add('review'); badge.textContent = 'Review'; }
+    else { badge.classList.add('allow'); badge.textContent = 'Allow'; }
+
+    const reasons = [];
+    if (pAbuse > 0.5) reasons.push('ACTIVE_ABUSE behavioral state');
+    if (rapid) reasons.push('Rapid transaction activity');
+    if (multiDevice) reasons.push('Multiple devices in window');
+    if (multiEmail) reasons.push('Multiple payment identities');
+    if (night > 0.6) reasons.push('High night-activity rate');
+    if (reasons.length === 0) reasons.push('No strong behavioral anomaly');
+
+    const list = document.getElementById('explain-list');
+    list.innerHTML = '';
+    reasons.forEach(r => {
+      const li = document.createElement('li');
+      li.textContent = r;
+      list.appendChild(li);
+    });
+  }
+
+  [velocityEl, devicesEl, emailsEl, nightEl, rapidEl].forEach(el => el.addEventListener('input', updateDemo));
+  updateDemo();
+
+  // ---------- Results ----------
+  // Live from final_evaluation.py output.
+  const RESULTS = [
+    { name: 'Rule-based baseline',  precision: 0.1983, recall: 0.3032, f1: 0.2398, roc_auc: 0.7320 },
+    { name: 'Logistic regression',  precision: 0.1154, recall: 0.5838, f1: 0.1928, roc_auc: 0.7624 },
+    { name: 'HMM trajectory',       precision: 0.1739, recall: 0.3079, f1: 0.2223, roc_auc: 0.6708 },
+    { name: 'Bayesian risk fusion', precision: 0.1700, recall: 0.3110, f1: 0.2198, roc_auc: 0.7207 },
+  ];
+  const maxF1 = Math.max(...RESULTS.map(r => r.f1));
+  const barsContainer = document.getElementById('results-bars');
+  RESULTS.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <span>${r.name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(r.f1/maxF1*100)}%"></div></div>
+      <span>${r.f1.toFixed(2)}</span>
+    `;
+    barsContainer.appendChild(row);
+  });
+
+  const metricsBody = document.getElementById('metrics-body');
+  RESULTS.forEach(r => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${r.name}</td>
+      <td class="num">${r.precision.toFixed(3)}</td>
+      <td class="num">${r.recall.toFixed(3)}</td>
+      <td class="num">${r.f1.toFixed(3)}</td>
+      <td class="num">${r.roc_auc.toFixed(3)}</td>
+    `;
+    metricsBody.appendChild(row);
+  });
+</script>
+
+</body>
+</html>
