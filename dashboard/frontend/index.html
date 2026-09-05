@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abuse-Ring Sentinel — Live Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0d0c0a;
+    --panel: #151310;
+    --panel-2: #1b1814;
+    --line: rgba(237,231,217,0.10);
+    --text: #ede7d9;
+    --text-dim: #8c8779;
+    --gold: #c99a46;
+    --gold-dim: rgba(201,154,70,0.14);
+    --amber: #d1a04a;
+    --green: #7fae6b;
+    --red: #c96a4a;
+    --display: 'Jost', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--bg);color:var(--text);font-family:var(--body);margin:0;}
+  body{padding:40px 24px 80px;}
+  .wrap{max-width:960px;margin:0 auto;}
+
+  .eyebrow{font-family:var(--display);font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+  h1{font-family:var(--display);font-weight:500;font-size:36px;line-height:1.2;margin:0 0 12px;}
+  .lede{color:var(--text-dim);font-size:15px;max-width:70ch;line-height:1.6;margin:0 0 28px;}
+
+  .status-bar{
+    display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-dim);
+    border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:12px 16px;margin-bottom:32px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
+  .dot.ok{background:var(--green);}
+  .dot.err{background:var(--red);}
+  .dot.pending{background:var(--amber);}
+
+  .panel{
+    border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:28px;margin-bottom:28px;
+  }
+  .panel h2{font-family:var(--display);font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);margin:0 0 6px;}
+  .panel .sub{color:var(--text-dim);font-size:13px;margin:0 0 22px;line-height:1.5;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;}
+  .field label{display:flex;justify-content:space-between;font-size:13px;color:var(--text-dim);margin-bottom:8px;}
+  .field label .val{color:var(--text);font-family:var(--display);}
+  input[type=range]{
+    width:100%;-webkit-appearance:none;height:2px;background:var(--line);border-radius:2px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--gold);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;}
+
+  .checkbox-row{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);margin-top:6px;}
+  .checkbox-row input{width:16px;height:16px;accent-color:var(--gold);}
+
+  .btn-row{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;}
+  button{
+    font-family:var(--display);font-size:13px;letter-spacing:0.04em;text-transform:uppercase;
+    border-radius:5px;padding:12px 20px;cursor:pointer;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--text);transition:border-color .15s;
+  }
+  button:hover{border-color:var(--gold);}
+  button.primary{background:var(--gold);color:#191510;border-color:var(--gold);font-weight:600;}
+  button.primary:hover{opacity:0.9;}
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+  th{
+    text-align:left;font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:0.06em;
+    text-transform:uppercase;color:var(--text-dim);padding:0 12px 10px 0;border-bottom:1px solid var(--line);
+  }
+  td{padding:12px 12px 12px 0;border-bottom:1px solid var(--line);color:var(--text-dim);vertical-align:top;}
+  td:first-child{color:var(--text);font-family:var(--display);}
+  tr:last-child td{border-bottom:none;}
+
+  .badge{
+    display:inline-block;padding:4px 10px;border-radius:4px;font-family:var(--display);
+    font-size:11px;letter-spacing:0.05em;text-transform:uppercase;
+  }
+  .badge.NORMAL{background:rgba(127,174,107,0.14);color:var(--green);}
+  .badge.PROBING{background:var(--gold-dim);color:var(--amber);}
+  .badge.ACTIVE_ABUSE{background:rgba(201,106,74,0.16);color:var(--red);}
+  .badge.LOW{background:rgba(127,174,107,0.14);color:var(--green);}
+  .badge.MEDIUM{background:var(--gold-dim);color:var(--amber);}
+  .badge.HIGH{background:rgba(201,106,74,0.16);color:var(--red);}
+  .badge.ALLOW{background:rgba(127,174,107,0.14);color:var(--green);}
+  .badge.REVIEW{background:var(--gold-dim);color:var(--amber);}
+  .badge.BLOCK{background:rgba(201,106,74,0.16);color:var(--red);}
+
+  .stats-strip{display:flex;gap:36px;flex-wrap:wrap;}
+  .stat-num{font-family:var(--display);font-size:22px;color:var(--text);}
+  .stat-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
+
+  .note{
+    font-size:12px;color:var(--text-dim);border-left:2px solid var(--gold-dim);padding-left:14px;margin-top:20px;line-height:1.6;
+  }
+  code{background:var(--panel-2);padding:1px 5px;border-radius:3px;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Live · API-driven</div>
+  <h1>Abuse-Ring Sentinel — Dashboard</h1>
+  <p class="lede">
+    This calls your real, trained HMM + Bayesian fusion pipeline over an API —
+    no hardcoded numbers. Build a "session" by adding windows one at a time and
+    watch the same trajectory logic from <code>hmm/model_v3.py</code> and
+    <code>bayesian/risk_model.py</code> run on it live.
+  </p>
+
+  <div class="status-bar" id="status-bar">
+    <div class="dot pending" id="status-dot"></div>
+    <span id="status-text">Checking API connection…</span>
+  </div>
+
+  <div class="panel" id="model-info-panel" style="display:none;">
+    <h2>Model, as trained just now</h2>
+    <p class="sub">Same entity-level 80/20 split, same GaussianHMM config, as your evaluation run.</p>
+    <div class="stats-strip" id="stats-strip"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Current window</h2>
+    <p class="sub">Set the behavior for one simulated 6-hour window, then add it to the session.</p>
+
+    <div class="grid">
+      <div class="field">
+        <label>Transactions in window <span class="val" id="val-tx">3</span></label>
+        <input type="range" id="tx" min="1" max="20" value="3">
+      </div>
+      <div class="field">
+        <label>Unique devices <span class="val" id="val-dev">1</span></label>
+        <input type="range" id="dev" min="1" max="8" value="1">
+      </div>
+      <div class="field">
+        <label>Unique payment emails <span class="val" id="val-email">1</span></label>
+        <input type="range" id="email" min="1" max="6" value="1">
+      </div>
+      <div class="field">
+        <label>Unique addresses <span class="val" id="val-addr">1</span></label>
+        <input type="range" id="addr" min="1" max="6" value="1">
+      </div>
+      <div class="field">
+        <label>Device shared with N other entities <span class="val" id="val-shared">1</span></label>
+        <input type="range" id="shared" min="1" max="8" value="1">
+      </div>
+      <div class="field">
+        <label>Night-activity rate <span class="val" id="val-night">10%</span></label>
+        <input type="range" id="night" min="0" max="100" value="10">
+      </div>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="rapid">
+      <label for="rapid">Rapid-fire (under 60s since previous transaction)</label>
+    </div>
+
+    <div class="btn-row">
+      <button class="primary" id="btn-add">+ Add window to session</button>
+      <button id="btn-reset">Reset session</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Session — scored by the real model</h2>
+    <p class="sub" id="session-sub">No windows added yet.</p>
+    <table id="session-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Step</th><th>Hidden state</th><th>Active-abuse prob.</th>
+          <th>Trajectory score</th><th>Fused risk</th><th>Level</th><th>Decision</th><th>Why</th>
+        </tr>
+      </thead>
+      <tbody id="session-body"></tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    A new session has no prior history, so the trajectory fields
+    (probing history, recent-active count, state persistence) build up
+    from only the windows you've added here — same formula as the real
+    pipeline, just starting from a clean slate the way a brand-new
+    account would. The API trains the actual HMM on
+    <code>behavioral_sequences_v2.csv</code> at startup — the numbers
+    here are not looked up from a table, they're computed live.
+  </div>
+
+</div>
+
+<script>
+  const API_BASE = window.API_BASE || 'http://localhost:8000';
+
+  const ids = ['tx','dev','email','addr','shared','night'];
+  const labelIds = {tx:'val-tx', dev:'val-dev', email:'val-email', addr:'val-addr', shared:'val-shared', night:'val-night'};
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    const label = document.getElementById(labelIds[id]);
+    const render = () => { label.textContent = id === 'night' ? el.value + '%' : el.value; };
+    el.addEventListener('input', render);
+    render();
+  });
+
+  let session = [];
+
+  function currentWindow(){
+    return {
+      transaction_count_window: +document.getElementById('tx').value,
+      amount_total_window: 40 * (+document.getElementById('tx').value),
+      amount_mean_window: 40,
+      amount_max_window: 60,
+      amount_std_window: 8,
+      time_since_previous_transaction: document.getElementById('rapid').checked ? 20 : 900,
+      unique_devices_window: +document.getElementById('dev').value,
+      device_entity_count: +document.getElementById('shared').value,
+      unique_payment_emails_window: +document.getElementById('email').value,
+      unique_receiver_emails_window: 1,
+      unique_addresses_window: +document.getElementById('addr').value,
+      unique_products_window: 1,
+      night_activity_rate: (+document.getElementById('night').value) / 100,
+      amount_change_ratio: 0,
+    };
+  }
+
+  async function checkHealth(){
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+    try {
+      const res = await fetch(`${API_BASE}/health`);
+      const data = await res.json();
+      if (data.ready) {
+        dot.className = 'dot ok';
+        text.textContent = 'Connected — model trained and ready.';
+        document.getElementById('model-info-panel').style.display = 'block';
+        const s = data.stats;
+        document.getElementById('stats-strip').innerHTML = `
+          <div><div class="stat-num">${s.train_entities.toLocaleString()}</div><div class="stat-label">Train entities</div></div>
+          <div><div class="stat-num">${s.test_entities.toLocaleString()}</div><div class="stat-label">Test entities</div></div>
+          <div><div class="stat-num">${s.test_observations.toLocaleString()}</div><div class="stat-label">Test observations</div></div>
+          <div><div class="stat-num">${(s.fraud_prior*100).toFixed(2)}%</div><div class="stat-label">Fraud prior</div></div>
+          <div><div class="stat-num">${s.hmm_converged ? 'Yes' : 'No'}</div><div class="stat-label">HMM converged</div></div>
+          <div><div class="stat-num">${s.train_seconds}s</div><div class="stat-label">Train time</div></div>
+        `;
+        return true;
+      } else if (data.error) {
+        dot.className = 'dot err';
+        text.textContent = `Model failed to train: ${data.error}`;
+        return false;
+      } else {
+        dot.className = 'dot pending';
+        text.textContent = 'Model is still training on startup — this can take a minute...';
+        return false;
+      }
+    } catch (e) {
+      dot.className = 'dot err';
+      text.textContent = `Can't reach API at ${API_BASE} — start the backend (see README) and refresh.`;
+      return false;
+    }
+  }
+
+  async function scoreSession(){
+    if (session.length === 0) return;
+    const res = await fetch(`${API_BASE}/score`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ windows: session })
+    });
+    if (!res.ok){
+      const err = await res.json().catch(() => ({detail: res.statusText}));
+      alert('Scoring failed: ' + (err.detail || res.statusText));
+      return;
+    }
+    const data = await res.json();
+    renderSession(data.steps);
+  }
+
+  function renderSession(steps){
+    const table = document.getElementById('session-table');
+    const body = document.getElementById('session-body');
+    const sub = document.getElementById('session-sub');
+    if (steps.length === 0){
+      table.style.display = 'none';
+      sub.textContent = 'No windows added yet.';
+      return;
+    }
+    table.style.display = 'table';
+    sub.textContent = `${steps.length} window(s) in this session — most recent step reflects the account's current trajectory.`;
+    body.innerHTML = steps.map(s => `
+      <tr>
+        <td>${s.step}</td>
+        <td><span class="badge ${s.state_name}">${s.state_name.replace('_',' ')}</span></td>
+        <td>${(s.active_abuse_probability*100).toFixed(1)}%</td>
+        <td>${s.trajectory_score.toFixed(3)}</td>
+        <td>${(s.bayesian_fraud_probability*100).toFixed(1)}%</td>
+        <td><span class="badge ${s.bayesian_risk_level}">${s.bayesian_risk_level}</span></td>
+        <td><span class="badge ${s.decision}">${s.decision}</span></td>
+        <td style="max-width:220px;">${s.risk_explanation}</td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('btn-add').addEventListener('click', async () => {
+    session.push(currentWindow());
+    await scoreSession();
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    session = [];
+    renderSession([]);
+  });
+
+  checkHealth();
+  const pollHandle = setInterval(async () => {
+    const ready = await checkHealth();
+    if (ready) clearInterval(pollHandle);
+  }, 2000);
+</script>
+</body>
+</html>
